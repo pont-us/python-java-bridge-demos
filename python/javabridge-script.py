@@ -2,9 +2,10 @@
 
 import os
 import javabridge
+from common import jar_path
 
 javabridge.start_vm(run_headless=True, class_path=javabridge.JARS +
-                    ["../java/target/pythonjavabridgedemos-1.0-SNAPSHOT.jar"])
+                    [jar_path])
 try:
     # Bind a Java variable and run a script that uses it.
     print(javabridge.run_script(
@@ -29,8 +30,7 @@ try:
     main2 = javabridge.JClassWrapper(
         "net.talvi.pythonjavabridgedemos.Main")("Bob")
     print(main2.greet("Hi there"))
-    print("2 + 2 = ", main2.add(2, 2))
-
+    print("2 + 2 =", main2.add(2, 2))
 
 finally:
     javabridge.kill_vm()

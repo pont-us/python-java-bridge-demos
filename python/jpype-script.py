@@ -2,11 +2,7 @@
 
 import jpype
 import os
-
-script_dir = os.path.dirname(os.path.abspath(__file__))
-jar_path = os.path.join(script_dir, "..", "java", "target",
-                        "pythonjavabridgedemos-1.0-SNAPSHOT-"
-                        "jar-with-dependencies.jar")
+from common import jar_path
 
 jpype.startJVM(jpype.getDefaultJVMPath(),
                "-ea",
