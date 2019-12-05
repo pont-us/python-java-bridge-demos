@@ -17,6 +17,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import py4j.GatewayServer;
 
 /**
  * A minimal class to demonstrate the use of various Python-Java bridge
@@ -28,7 +29,7 @@ import org.apache.commons.cli.ParseException;
  * @author pont
  */
 public class Main {
-    
+
     /**
      * A person's name, set in the constructor and used in the
      * {@link #greet(java.lang.String) } method.
@@ -44,6 +45,98 @@ public class Main {
         this.name = name;
     }
     
+    /**
+     * Parses command-line arguments. If {@code -jepscript <file>}
+     * is passed, {@code <file>} will be run as a Python script using Jep.
+     * If {@code -jythonscript <file>} is passed, {@code <file>} will be
+     * run as a Python script using Jython.
+     * 
+     * @param args
+     * @throws Exception 
+     */
+    public static void main(String[] args) throws Exception {
+        final Options options = new Options();
+        
+        options.addOption(Option.builder("jepscript")
+            .hasArg().argName("file").desc("run a Python script with Jep")
+            .build());
+        options.addOption(Option.builder("jythonscript")
+            .hasArg().argName("file").desc("run a Python script with Jython")
+            .build());
+        options.addOption(Option.builder("startpy4jserver")
+            .desc("start a Py4J server")
+            .build());
+        options.addOption(Option.builder("h").longOpt("help").build());
+
+        final CommandLineParser parser = new DefaultParser();
+        
+        try {
+            final CommandLine commandLine = parser.parse(options, args);
+            if (commandLine.hasOption("h")) {
+                final HelpFormatter formatter = new HelpFormatter();
+                formatter.printHelp("pythonjavabridgedemos", "", options,
+                        "", true);
+                return;
+            }
+            if (commandLine.hasOption("jepscript")) {
+                runJepScript(commandLine.getOptionValue("jepscript"));
+            }
+            if (commandLine.hasOption("jythonscript")) {
+                runJythonScript(commandLine.getOptionValue("jythonscript"));
+            }
+            if (commandLine.hasOption("startpy4jserver")) {
+                startPy4jServer();
+            }
+        } catch (ParseException ex) {
+            System.err.println("Could not parse arguments.\n"
+                    + ex.getMessage());
+            System.exit(1);
+        } 
+    }
+
+    /**
+     * Runs a specified script using the Jep framework.
+     * 
+     * @param filename the filename of the script to run
+     */
+    private static void runJepScript(String filename) {
+        try (Interpreter interp = new SharedInterpreter()) {
+            interp.set("main", new Main("Jeff"));
+            interp.runScript(filename);
+        } catch (JepException ex) {
+            System.err.println("Jep exception:\n"
+                    + ex.getMessage());
+            System.exit(1);
+        }
+    }
+    
+    /**
+     * Runs a specified script using Jython
+     * 
+     * @param filename the filename of the script to run
+     * @throws FileNotFoundException
+     * @throws IOException
+     * @throws ScriptException 
+     */
+    private static void runJythonScript(String filename)
+            throws FileNotFoundException, IOException, ScriptException {
+        final ScriptEngine scriptEngine =
+                new ScriptEngineManager().getEngineByName("python");
+        scriptEngine.put("main", new Main("Jeff"));
+        try (Reader reader = new FileReader(filename)) {
+            scriptEngine.eval(reader);
+        }
+    }
+
+    /**
+     * Starts a Py4J server (blocking).
+     */
+    private static void startPy4jServer() {
+        final Main main = new Main("Heliogabalus");
+        final GatewayServer server = new GatewayServer(main);
+        server.start(false);
+    }
+
     /**
      * Returns the sum of two integers
      * 
@@ -66,79 +159,5 @@ public class Main {
         return greeting + ", " + name + "!";
     }
     
-    /**
-     * Runs a specified script using the Jep framework.
-     * 
-     * @param filename the filename of the script to run
-     */
-    public static void runJepScript(String filename) {
-        try (Interpreter interp = new SharedInterpreter()) {
-            interp.set("main", new Main("Jeff"));
-            interp.runScript(filename);
-        } catch (JepException ex) {
-            System.err.println("Jep exception:\n"
-                    + ex.getMessage());
-            System.exit(1);
-        }
-    }
     
-    /**
-     * Runs a specified script using Jython
-     * 
-     * @param filename the filename of the script to run
-     * @throws FileNotFoundException
-     * @throws IOException
-     * @throws ScriptException 
-     */
-    public static void runJythonScript(String filename)
-            throws FileNotFoundException, IOException, ScriptException {
-        final ScriptEngine scriptEngine =
-                new ScriptEngineManager().getEngineByName("python");
-        scriptEngine.put("main", new Main("Jeff"));
-        try (Reader reader = new FileReader(filename)) {
-            scriptEngine.eval(reader);
-        }
-    }
-    
-    /**
-     * Parses command-line arguments. If {@code -jepscript <file>}
-     * is passed, {@code <file>} will be run as a Python script using Jep.
-     * If {@code -jythonscript <file>} is passed, {@code <file>} will be
-     * run as a Python script using Jython.
-     * 
-     * @param args
-     * @throws Exception 
-     */
-    public static void main(String[] args) throws Exception {
-        final Options options = new Options();
-        
-        options.addOption(Option.builder("jepscript")
-            .hasArg().argName("file").desc("run a Python script with Jep")
-            .build());
-        options.addOption(Option.builder("jythonscript")
-            .hasArg().argName("file").desc("run a Python script with Jython")
-            .build());
-        options.addOption(Option.builder("h").longOpt("help").build());
-
-        final CommandLineParser parser = new DefaultParser();
-        
-        try {
-            final CommandLine commandLine = parser.parse(options, args);
-            if (commandLine.hasOption("h")) {
-                HelpFormatter formatter = new HelpFormatter();
-                formatter.printHelp("myapp", "", options, "", true);
-                return;
-            }
-            if (commandLine.hasOption("jepscript")) {
-                runJepScript(commandLine.getOptionValue("jepscript"));
-            }
-            if (commandLine.hasOption("jythonscript")) {
-                runJythonScript(commandLine.getOptionValue("jythonscript"));
-            }
-        } catch (ParseException ex) {
-            System.err.println("Could not parse arguments.\n"
-                    + ex.getMessage());
-            System.exit(1);
-        } 
-    }
 }
