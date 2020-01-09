@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import jpype
-import os
 from common import jar_path
 
 jpype.startJVM(jpype.getDefaultJVMPath(),
