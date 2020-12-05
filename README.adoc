@@ -1,0 +1,7 @@
+= Python-Java bridge examples
+
+This repository accompanies the article
+https://talvi.net/a-brief-overview-of-python-java-bridges-in-2020.html['`A brief overview of Python-Java bridges in 2020`']
+and contains usage examples of various Python-Java bridge libraries.
+
+By Pontus Lurcock, 2020. Released into the public domain.
